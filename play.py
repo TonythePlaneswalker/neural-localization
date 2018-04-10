@@ -2,12 +2,15 @@ from __future__ import print_function
 import gym
 import Maze
 import getch
-
+from visdom import Visdom
 def main():
+    vis = Visdom(server='http://localhost',port='9000')
     env = gym.make('Maze-v0')
     while True:
-        env.render()
+        env.render(vis)
+        print('get key')
         key = getch.getch()
+        print(key)
         if key == 'q':
             break
         elif key == 'w':

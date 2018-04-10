@@ -4,11 +4,11 @@ from __future__ import print_function
 
 import matplotlib.pyplot as plt
 import numpy as np
-from .grid_world import GridWorld
+#from .grid_world import GridWorld
 
 
 # https://en.wikipedia.org/wiki/Maze_generation_algorithm#Python_code_example
-def maze(width, height, np_random, complexity=.1, density=.1):
+def maze(width, height, np_random, complexity=.1, density=.3):
     # Only odd shapes
     shape = ((height // 2) * 2 + 1, (width // 2) * 2 + 1)
     # Adjust complexity and density relative to maze size
@@ -38,9 +38,9 @@ def maze(width, height, np_random, complexity=.1, density=.1):
     return Z
 
 
-class RandomMaze(GridWorld):
-    def gen_map(self):
-        return ~maze(self.size, self.size, self.np_random)
+#class RandomMaze(GridWorld):
+#    def gen_map(self):
+#        return ~maze(self.size, self.size, self.np_random)
 
 
 if __name__ == '__main__':
