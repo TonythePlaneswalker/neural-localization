@@ -122,15 +122,15 @@ class maze(gym.Env):
         self.current_step += 1
         if self.current_step >= self.max_step:
             done = True
-            # print('num possible', np.sum(self.belief > 0))
+            num_possible = np.sum(self.belief > 0)
             o, y, x = np.unravel_index(np.argmax(self.belief), self.belief.shape)
-            if o == self.orientation and y == self.position[0] and x == self.position[1]:
+            if num_possible == 1 and o == self.orientation and y == self.position[0] and x == self.position[1]:
                 reward = 1
             else:
                 reward = 0
         else:
             done = False
-        return [self.position,self.orientation], reward, done, {}
+        return obs, reward, done, {}
 
     def get_map_with_agent(self):
         img = np.array([self.map, self.map, self.map]).astype(np.float32)

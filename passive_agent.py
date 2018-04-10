@@ -3,6 +3,7 @@ import Maze
 import gym
 import matplotlib.pyplot as plt
 import os
+import time
 
 
 def plot_env(env):
@@ -14,7 +15,7 @@ def plot_env(env):
     orientations = ['North', 'East', 'South', 'West']
     for j in range(4):
         plt.subplot(1, 4, j + 1)
-        plt.imshow(env.belief[j], cmap='gray', vmin=0, vmax=1)
+        plt.imshow(env.belief[j], cmap='gray')
         plt.axis('off')
         plt.title(orientations[j])
     return map_fig, belief_fig
@@ -25,6 +26,7 @@ if __name__ == '__main__':
     parser.add_argument('--map_size', type=int, default=7)
     parser.add_argument('--max_step', type=int, default=15)
     parser.add_argument('--num_episodes', type=int, default=1000)
+    parser.add_argument('--seed', type=int, default=66)
     parser.add_argument('--vis', action='store_true')
     parser.add_argument('--plot', action='store_true')
     parser.add_argument('--plot_dir')
@@ -33,9 +35,11 @@ if __name__ == '__main__':
     env = gym.make('Maze-v1')
     env.set_size(args.map_size)
     env.set_max_step(args.max_step)
+    env.seed(args.seed)
     env.generate_map()
 
     num_success = 0
+    start = time.time()
     for i in range(args.num_episodes):
         done = False
         state = env.reset()
@@ -55,4 +59,5 @@ if __name__ == '__main__':
             map_fig.savefig(os.path.join(args.plot_dir, 'map_step%d' % step))
             belief_fig.savefig(os.path.join(args.plot_dir, 'belief_step%d' % step))
         num_success += reward
-    print('Success ratio', num_success / args.num_episodes)
+    end = time.time()
+    print('Success ratio %.3f', num_success / args.num_episodes, 'time %.2f' % (end - start))
