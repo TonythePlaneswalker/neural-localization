@@ -8,7 +8,7 @@ import numpy as np
 
 
 # https://en.wikipedia.org/wiki/Maze_generation_algorithm#Python_code_example
-def maze(width, height, np_random, complexity=.1, density=.3):
+def maze(width, height, np_random, complexity=.7, density=.7):
     # Only odd shapes
     shape = ((height // 2) * 2 + 1, (width // 2) * 2 + 1)
     # Adjust complexity and density relative to maze size

@@ -17,14 +17,14 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.conv1 = torch.nn.Conv2d(5, 16, kernel_size=(3, 3))
         self.conv2 = torch.nn.Conv2d(16, 16, kernel_size=(3, 3))
-        self.policy = torch.nn.Linear(2707, num_actions)
-        self.value = torch.nn.Linear(2707, 1)
+        self.policy = torch.nn.Linear(2711, num_actions)
+        self.value = torch.nn.Linear(2711, 1)
         layers = [self.conv1, self.conv2, self.policy, self.value]
         for layer in layers:
             torch.nn.init.xavier_normal(layer.weight)
             torch.nn.init.constant(layer.bias, 0)
 
-    def forward(self,_map,agent):
+    def forward(self,_map,agent,action=-1):
         _map = torch.transpose(_map,0,2)
         _map = torch.transpose(_map,1,2)
         _map = torch.unsqueeze(_map,0)

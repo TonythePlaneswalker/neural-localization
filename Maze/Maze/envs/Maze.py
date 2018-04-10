@@ -48,7 +48,10 @@ class maze(gym.Env):
         tmp_map = np.reshape(self.map,(int(self.map.shape[0]),int(self.map.shape[1]),1))
 
         state_map = np.concatenate((tmp_map,self.possibleMap),axis=2)
-        state_agent = np.array([self.position[0],self.position[1],self.orientation])
+        ori = np.zeros((4,))
+        ori[self.orientation-1] = 1
+        state_agent = np.array([self.position[0],self.position[1],obs])
+        state_agent = np.concatenate((state_agent,ori))
 
         return [state_map,state_agent]
     def seed(self, seed=None):
@@ -100,16 +103,20 @@ class maze(gym.Env):
 
             if self.map[self.position[0],self.position[1]]:
                 # Crushed!
+                obs = self.getObservation()
                 self.penalty += 1
                 print("Crushed!")
-                done = False
+                done = True
                 n_possible = np.sum(self.possibleMap)
                 reward = reward = 1.0/n_possible
-                self.position = tmp[:]
                 tmp_map = np.reshape(self.map,(int(self.map.shape[0]),int(self.map.shape[1]),1))
                 state_map = np.concatenate((tmp_map,self.possibleMap),axis=2)
-                state_agent = np.array([self.position[0],self.position[1],self.orientation])
-                return [state_map,state_agent], reward-self.current_step*0.01-self.penalty*0.1, done, {}
+                ori = np.zeros((4,))
+                ori[self.orientation-1] = 1
+                state_agent = np.array([self.position[0],self.position[1],obs])
+                state_agent = np.concatenate((state_agent,ori))
+                self.position = tmp[:]
+                return [state_map,state_agent], 0-self.current_step*0.01-self.penalty*0.1, done, {}
             else:
                 self.possibleMap[:,:,0] = np.roll(self.possibleMap[:,:,0],-1,axis=0)
                 self.possibleMap[:,:,1] = np.roll(self.possibleMap[:,:,1],1,axis=1)
@@ -126,7 +133,10 @@ class maze(gym.Env):
 
         tmp_map = np.reshape(self.map,(int(self.map.shape[0]),int(self.map.shape[1]),1))
         state_map = np.concatenate((tmp_map,self.possibleMap),axis=2)
-        state_agent = np.array([self.position[0],self.position[1],self.orientation])
+        ori = np.zeros((4,))
+        ori[self.orientation-1] = 1
+        state_agent = np.array([self.position[0],self.position[1],obs])
+        state_agent = np.concatenate((state_agent,ori))
         if self.current_step > 50:
             done = True
             print("So many steps")
