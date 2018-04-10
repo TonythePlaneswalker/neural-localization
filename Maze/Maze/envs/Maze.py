@@ -1,5 +1,6 @@
 from __future__ import print_function
 import random_maze
+import ray_casting
 import gym
 import numpy as np
 from gym import spaces
@@ -24,8 +25,8 @@ Class Maze(gym.Env):
         self.observation_space = spaces.Box(low=1,high=self.size,shape
                                             =(1,),dtype=np.uint8)
         self.action_space = spaces.Discrete(3)
-        self.map = random_maze.generate_map(self.size)
-        self.ray_cast = generate_ray_cast(self.map)
+        self.map = random_maze.maze(self.size,self.size,np.random)
+        self.ray_cast = ray_casting.ray_casting(self.map)
         self.orientation = np.random.randint(low=0,high=3)
         self.possible_position = self.findOpenSpace()
         self.position = self.init_pos()
