@@ -32,15 +32,25 @@ class maze(gym.Env):
         self.possible_position = self.findOpenSpace()
         self.position = self.init_pos()
         self.possibleMap = np.ones((self.size,self.size,4))
+        obs = self.getObservation()
+        self.updatePossibleMap(obs)
         self.viewer = None
-
+        self.penalty = 0
     def reset(self):
         self.orientation = np.random.randint(low=0,high=3)
         self.possible_position = self.findOpenSpace()
         self.position = self.init_pos()
         self.possibleMap = np.ones((self.size,self.size,4))
+        obs = self.getObservation()
+        self.updatePossibleMap(obs)
+        self.penalty = 0
         self.current_step = 0
+        tmp_map = np.reshape(self.map,(int(self.map.shape[0]),int(self.map.shape[1]),1))
 
+        state_map = np.concatenate((tmp_map,self.possibleMap),axis=2)
+        state_agent = np.array([self.position[0],self.position[1],self.orientation])
+
+        return [state_map,state_agent]
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
 
@@ -70,6 +80,7 @@ class maze(gym.Env):
 
     def step(self, action):
         self.current_step += 1
+        self
         if action == 1:
             self.orientation = (self.orientation-1) % 4
             self.possibleMap = np.roll(self.possibleMap,-1,axis=2)
@@ -77,6 +88,7 @@ class maze(gym.Env):
             self.orientation = (self.orientation+1) % 4
             self.possibleMap = np.roll(self.possibleMap,1,axis=2)
         elif action == 0:
+            tmp = self.position[:]
             if self.orientation == 0:
                 self.position[1] -= 1
             elif self.orientation == 1:
@@ -88,10 +100,16 @@ class maze(gym.Env):
 
             if self.map[self.position[0],self.position[1]]:
                 # Crushed!
+                self.penalty += 1
                 print("Crushed!")
-                done = True
-                reward = 0
-                return [self.position,self.orientation], reward, done, {}
+                done = False
+                n_possible = np.sum(self.possibleMap)
+                reward = reward = 1.0/n_possible
+                self.position = tmp[:]
+                tmp_map = np.reshape(self.map,(int(self.map.shape[0]),int(self.map.shape[1]),1))
+                state_map = np.concatenate((tmp_map,self.possibleMap),axis=2)
+                state_agent = np.array([self.position[0],self.position[1],self.orientation])
+                return [state_map,state_agent], reward-self.current_step*0.01-self.penalty*0.1, done, {}
             else:
                 self.possibleMap[:,:,0] = np.roll(self.possibleMap[:,:,0],-1,axis=0)
                 self.possibleMap[:,:,1] = np.roll(self.possibleMap[:,:,1],1,axis=1)
@@ -105,7 +123,14 @@ class maze(gym.Env):
         done = True if n_possible == 1 else False
         if done:
             print("Find!")
-        return [self.position,self.orientation], reward, done, {}
+
+        tmp_map = np.reshape(self.map,(int(self.map.shape[0]),int(self.map.shape[1]),1))
+        state_map = np.concatenate((tmp_map,self.possibleMap),axis=2)
+        state_agent = np.array([self.position[0],self.position[1],self.orientation])
+        if self.current_step > 50:
+            done = True
+            print("So many steps")
+        return [state_map,state_agent], reward-self.current_step*0.01-self.penalty*0.1, done, {}
 
     def render(self,vis):
         # img = self._get_image()

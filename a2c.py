@@ -4,6 +4,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
+import Maze
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -16,17 +17,22 @@ class Model(nn.Module):
         super(Model, self).__init__()
         self.conv1 = torch.nn.Conv2d(5, 16, kernel_size=(3, 3))
         self.conv2 = torch.nn.Conv2d(16, 16, kernel_size=(3, 3))
-        self.policy = torch.nn.Linear(16, num_actions)
-        self.value = torch.nn.Linear(16, 1)
+        self.policy = torch.nn.Linear(2707, num_actions)
+        self.value = torch.nn.Linear(2707, 1)
         layers = [self.conv1, self.conv2, self.policy, self.value]
         for layer in layers:
             torch.nn.init.xavier_normal(layer.weight)
             torch.nn.init.constant(layer.bias, 0)
 
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
+    def forward(self,_map,agent):
+        _map = torch.transpose(_map,0,2)
+        _map = torch.transpose(_map,1,2)
+        _map = torch.unsqueeze(_map,0)
+        x = F.relu(self.conv1(_map))
         x = F.relu(self.conv2(x))
+
         x = x.view(x.size(0), -1)
+        x = torch.cat((x,torch.unsqueeze(agent,0)),dim=1)
         log_pi = F.log_softmax(self.policy(x), dim=-1)
         v = self.value(x)
         return log_pi, v
@@ -67,37 +73,37 @@ class A2C:
         plt.ylabel('average reward')
         errbar = plt.errorbar(np.arange(1), rewards_mean[:1], rewards_std[:1], capsize=3)
 
-        viz = Visdom()
+        global vis
         policy_loss_plot = None
         value_loss_plot = None
         length_plot = None
-        reward_plot = viz.matplot(plt, env=args.task_name)
+        #reward_plot = vis.matplot(plt, env=args.task_name)
 
         for i in range(args.train_episodes):
             policy_losses[i], value_losses[i], lengths[i] = self.train_one_episode(args.gamma)
             if (i + 1) % args.episodes_per_plot == 0:
                 if policy_loss_plot is None:
                     opts = dict(xlabel='episodes', ylabel='policy loss')
-                    policy_loss_plot = viz.line(X=np.arange(1, i + 2), Y=policy_losses[:i + 1],
+                    policy_loss_plot = vis.line(X=np.arange(1, i + 2), Y=policy_losses[:i + 1],
                                                 env=args.task_name, opts=opts)
                 else:
-                    viz.line(X=np.arange(i - args.episodes_per_plot + 1, i + 2),
+                    vis.line(X=np.arange(i - args.episodes_per_plot + 1, i + 2),
                              Y=policy_losses[i - args.episodes_per_plot:i + 1],
                              env=args.task_name, win=policy_loss_plot, update='append')
                 if value_loss_plot is None:
                     opts = dict(xlabel='episodes', ylabel='value loss')
-                    value_loss_plot = viz.line(X=np.arange(1, i + 2), Y=value_losses[:i + 1],
+                    value_loss_plot = vis.line(X=np.arange(1, i + 2), Y=value_losses[:i + 1],
                                                env=args.task_name, opts=opts)
                 else:
-                    viz.line(X=np.arange(i - args.episodes_per_plot + 1, i + 2),
+                    vis.line(X=np.arange(i - args.episodes_per_plot + 1, i + 2),
                              Y=value_losses[i - args.episodes_per_plot:i + 1],
                              env=args.task_name, win=value_loss_plot, update='append')
                 if length_plot is None:
                     opts = dict(xlabel='episodes', ylabel='episode length')
-                    length_plot = viz.line(X=np.arange(1, i + 2), Y=lengths[:i + 1],
+                    length_plot = vis.line(X=np.arange(1, i + 2), Y=lengths[:i + 1],
                                            env=args.task_name, opts=opts)
                 else:
-                    viz.line(X=np.arange(i - args.episodes_per_plot + 1, i + 2),
+                    vis.line(X=np.arange(i - args.episodes_per_plot + 1, i + 2),
                              Y=lengths[i - args.episodes_per_plot:i + 1],
                              env=args.task_name, win=length_plot, update='append')
             if (i + 1) % args.episodes_per_eval == 0:
@@ -108,7 +114,7 @@ class A2C:
                 errbar.remove()
                 errbar = plt.errorbar(np.arange(j + 1) * args.episodes_per_eval,
                                       rewards_mean[:j + 1], rewards_std[:j + 1], capsize=3)
-                viz.matplot(plt, env=args.task_name, win=reward_plot)
+                #vis.matplot(plt, env=args.task_name, win=reward_plot)
         plt.savefig('figs/' + args.task_name + '_rewards.png')
         torch.save(a2c.model.state_dict(), 'models/' + args.task_name + '.model')
 
@@ -144,12 +150,13 @@ class A2C:
         # - the action
         # - log probability of the chosen action (as a Variable)
         # - value of the state (as a Variable)
-        log_pi, value = self.model(self._array2var(state))
+        log_pi, value = self.model(self._array2var(state[0]),self._array2var(state[1]))
         if stochastic:
             action = torch.distributions.Categorical(log_pi.exp()).sample()
         else:
             _, action = log_pi.max(0)
-        return action.data[0], log_pi[action], value
+
+        return action.data[0], log_pi[0,action.data[0]], value
 
     def generate_episode(self, stochastic=True):
         # Generates an episode by executing the current policy in the given env.
@@ -162,7 +169,9 @@ class A2C:
         rewards = []
         state = self.env.reset()
         done = False
+        global vis
         while not done:
+            env.render(vis)
             action, log_prob, value = self.select_action(state, stochastic)
             log_probs.append(log_prob)
             values.append(value)
@@ -192,8 +201,9 @@ if __name__ == '__main__':
     parser.add_argument('--seed', dest='seed', type=int,
                         default=666, help="The random seed.")
     args = parser.parse_args()
-
-    env = gym.make('LunarLander-v2')
+    global vis
+    vis = Visdom(server='http://localhost',port='9000')
+    env = gym.make('Maze-v0')
     env.seed(args.seed)
     torch.manual_seed(args.seed)
     a2c = A2C(env, args.n)
