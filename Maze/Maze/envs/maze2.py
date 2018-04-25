@@ -73,6 +73,7 @@ class maze(gym.Env):
         self.belief = (self.ray_cast == init_obs).astype(np.float32)
         self.belief /= self.belief.sum()
         self.current_step = 0
+        return self.belief
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -130,7 +131,7 @@ class maze(gym.Env):
                 reward = 0
         else:
             done = False
-        return obs, reward, done, {}
+        return self.belief, reward, done, {}
 
     def get_map_with_agent(self):
         img = np.array([self.map, self.map, self.map]).astype(np.float32)
@@ -155,8 +156,12 @@ class maze(gym.Env):
         return img
 
     def render(self, mode='human'):
-        self.vis.image(self.get_map_with_agent(),win='map',opts={'title':"Maze"})
-        self.vis.image(np.kron(self.belief[0, :, :], np.ones((20,20))),win='North',opts={'title':"North"})
-        self.vis.image(np.kron(self.belief[1, :, :], np.ones((20,20))),win='East',opts={'title':"East"})
-        self.vis.image(np.kron(self.belief[2, :, :], np.ones((20,20))),win='South',opts={'title':"South"})
-        self.vis.image(np.kron(self.belief[3, :, :], np.ones((20,20))),win='West',opts={'title':"West"})
+        self.vis.image(self.get_map_with_agent(), env='render', win='map', opts={'title': "Maze"})
+        self.vis.image(np.kron(self.belief[0, :, :], np.ones((20, 20))),
+                       env='render', win='North', opts={'title': "North"})
+        self.vis.image(np.kron(self.belief[1, :, :], np.ones((20, 20))),
+                       env='render', win='East', opts={'title': "East"})
+        self.vis.image(np.kron(self.belief[2, :, :], np.ones((20, 20))),
+                       env='render', win='South', opts={'title': "South"})
+        self.vis.image(np.kron(self.belief[3, :, :], np.ones((20, 20))),
+                       env='render', win='West', opts={'title': "West"})
