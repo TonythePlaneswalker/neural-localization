@@ -1,8 +1,5 @@
 import argparse
 import gym
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
 import numpy as np
 import Maze
 import torch
@@ -69,7 +66,7 @@ class A2C:
 
         vis = Visdom()
         success_rate[0] = self.eval(args.test_episodes)
-        print('episode', 0, 'success_rate', success_rate[0])
+        print('episode %d\t success rate %.2f' % (0, success_rate[0]))
         opts = dict(xlabel='episodes', ylabel='success rate')
         reward_plot = vis.line(X=np.array([0]), Y=success_rate[:1], env=args.task_name, opts=opts)
         policy_loss_plot = None
@@ -78,7 +75,7 @@ class A2C:
         self.optimizer = torch.optim.Adam(self.model.parameters(), args.lr)
         for i in range(args.train_episodes):
             if i % args.episodes_per_mapgen:
-                self.env.seed(np.random.randint(1000, 2 ** 31))
+                self.env.seed(np.random.randint(1000, 2**31))
                 self.env.generate_map()
             policy_losses[i], value_losses[i] = self.train_one_episode(args.gamma)
             if (i + 1) % args.episodes_per_plot == 0:
@@ -101,16 +98,15 @@ class A2C:
             if (i + 1) % args.episodes_per_eval == 0:
                 j = (i + 1) // args.episodes_per_eval
                 success_rate[j] = self.eval(args.test_episodes)
-                print('episode', i + 1, 'policy loss', policy_losses[i],
-                      'value loss', value_losses[i], 'success_rate', success_rate[j])
-                vis.line(X=np.array([j]), Y=success_rate[j:j+1],
+                print('episode %d\t policy loss %.6f\t value loss %.6f\t success rate %.2f' % (
+                    i + 1, policy_losses[i], value_losses[i], success_rate[j]))
+                vis.line(X=np.array([j * args.episodes_per_eval]), Y=success_rate[j:j+1],
                          env=args.task_name, win=reward_plot, update='append')
-        plt.savefig('figs/' + args.task_name + '_rewards.png')
         torch.save(a2c.model.state_dict(), 'models/' + args.task_name + '.model')
 
     def train_one_episode(self, gamma):
         # Trains the model on a single episode using A2C.
-        rewards, log_pi, value = self.generate_episode()
+        rewards, log_pi, value, entropy = self.generate_episode()
         T = len(rewards)
         R = np.zeros(T, dtype=np.float32)
         for t in reversed(range(T)):
@@ -118,7 +114,7 @@ class A2C:
             R[t] = gamma ** self.n * v_end + \
                    sum([gamma ** k * rewards[t+k] for k in range(min(self.n, T - t))])
         R = self._array2var(R, requires_grad=False)
-        policy_loss = (-log_pi * (R - value.detach())).mean()
+        policy_loss = -(log_pi * (R - value.detach()) + args.beta * entropy).mean()
         value_loss = ((R - value) ** 2).mean()
         loss = policy_loss + value_loss
         self.optimizer.zero_grad()
@@ -132,7 +128,7 @@ class A2C:
         for i in range(num_episodes):
             self.env.seed(i)
             self.env.generate_map()
-            rewards, _, _ = self.generate_episode(render=False, stochastic=stochastic)
+            rewards, _, _, _ = self.generate_episode(render=False, stochastic=stochastic)
             total_success += rewards[-1]
         return total_success / num_episodes
 
@@ -146,11 +142,12 @@ class A2C:
         log_pi, value = self.model(self._array2var(belief_map),
                                    self._array2var(history, requires_grad=False),
                                    self._array2var(np.array([step]), requires_grad=False))
+        entropy = -(log_pi.exp() * log_pi).sum()
         if stochastic:
             action = torch.distributions.Categorical(log_pi.exp()).sample()
         else:
             _, action = log_pi.max()
-        return action.data[0], log_pi[action], value
+        return action.data[0], log_pi[action], value, entropy
 
     def generate_episode(self, render=False, stochastic=True):
         # Generates an episode by executing the current policy in the given env.
@@ -160,6 +157,7 @@ class A2C:
         # - a Variable of state values
         log_probs = []
         values = []
+        entropies = []
         rewards = []
         history = np.zeros(5, dtype=np.int64)
         belief = self.env.reset()
@@ -168,16 +166,17 @@ class A2C:
         while not done:
             if render:
                 self.env.render()
-            action, log_prob, value = self.select_action(
+            action, log_prob, value, entropy = self.select_action(
                 belief, self.env.map, history, step, stochastic)
             belief, reward, done, _ = self.env.step(action)
             rewards.append(reward)
             log_probs.append(log_prob)
             values.append(value)
+            entropies.append(entropy)
             history = np.roll(history, 1)
             history[0] = action + 1
             step += 1
-        return rewards, torch.cat(log_probs), torch.cat(values)
+        return rewards, torch.cat(log_probs), torch.cat(values), torch.cat(entropies)
 
 
 if __name__ == '__main__':
@@ -194,8 +193,10 @@ if __name__ == '__main__':
                         default=0.001, help="The learning rate.")
     parser.add_argument('--gamma', dest='gamma', type=float,
                         default=0.99, help="The discount factor.")
+    parser.add_argument('--beta', dest='beta', type=float,
+                        default=0.01, help="The entropy weight.")
     parser.add_argument('--train_episodes', dest='train_episodes', type=int,
-                        default=100000, help="Number of episodes to train on.")
+                        default=200000, help="Number of episodes to train on.")
     parser.add_argument('--test_episodes', dest='test_episodes', type=int,
                         default=100, help="Number of episodes to test on.")
     parser.add_argument('--episodes_per_eval', dest='episodes_per_eval', type=int,

@@ -4,7 +4,6 @@ from __future__ import print_function
 
 import matplotlib.pyplot as plt
 import numpy as np
-#from .grid_world import GridWorld
 
 
 # https://en.wikipedia.org/wiki/Maze_generation_algorithm#Python_code_example
@@ -36,11 +35,6 @@ def maze(width, height, np_random, complexity=.7, density=.7):
                     Z[y_ + (y - y_) // 2, x_ + (x - x_) // 2] = 1
                     x, y = x_, y_
     return Z
-
-
-#class RandomMaze(GridWorld):
-#    def gen_map(self):
-#        return ~maze(self.size, self.size, self.np_random)
 
 
 if __name__ == '__main__':

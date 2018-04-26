@@ -5,8 +5,7 @@ from __future__ import print_function
 import cv2
 import gym
 import numpy as np
-import random_maze
-from PIL import Image, ImageDraw
+from . import random_maze
 from gym import spaces
 from gym.utils import seeding
 from visdom import Visdom
