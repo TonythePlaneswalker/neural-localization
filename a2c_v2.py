@@ -1,7 +1,7 @@
 import argparse
 import gym
-import numpy as np
 import Maze
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -100,7 +100,7 @@ class A2C:
                 success_rate[j] = self.eval(args.test_episodes)
                 print('episode %d\t policy loss %.6f\t value loss %.6f\t success rate %.2f' % (
                     i + 1, policy_losses[i], value_losses[i], success_rate[j]))
-                vis.line(X=np.array([j * args.episodes_per_eval]), Y=success_rate[j:j+1],
+                vis.line(X=np.array([i+1]), Y=success_rate[j:j+1],
                          env=args.task_name, win=reward_plot, update='append')
         torch.save(a2c.model.state_dict(), 'models/' + args.task_name + '.model')
 
@@ -146,7 +146,7 @@ class A2C:
         if stochastic:
             action = torch.distributions.Categorical(log_pi.exp()).sample()
         else:
-            _, action = log_pi.max()
+            _, action = log_pi.max(0)
         return action.data[0], log_pi[action], value, entropy
 
     def generate_episode(self, render=False, stochastic=True):
@@ -188,7 +188,7 @@ if __name__ == '__main__':
     parser.add_argument('--max_step', dest='max_step', type=int,
                         default=20, help="Maximum number of steps in an episode.")
     parser.add_argument('-n', dest='n', type=int,
-                        default=20, help="Number steps in a trace.")
+                        default=20, help="Number steps in the trace.")
     parser.add_argument('--lr', dest='lr', type=float,
                         default=0.001, help="The learning rate.")
     parser.add_argument('--gamma', dest='gamma', type=float,
@@ -211,7 +211,6 @@ if __name__ == '__main__':
     env = gym.make('Maze-v1')
     env.set_size(args.size)
     env.set_max_step(args.max_step)
-    env.generate_map()
 
     a2c = A2C(env, args.n, args.use_cuda)
     a2c.train(args)
