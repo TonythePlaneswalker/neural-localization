@@ -127,48 +127,48 @@ class maze(gym.Env):
                                             + 0.10558*self.belief[0,i+2,j]
                     elif self.map[i-1,j]:
                         belief_tmp[0,i,j] = 0.882*self.belief[0,i+1,j] + 0.118*self.belief[0,i,j]
-                    elif !self.map[i-1,j] and i+2 < n:
-                        belief_tmp[0,i,j] = 0.7884*(0.5*self.belief[0,i+1,j]+0.5*self.belief[0,i,j]) + \
+                    elif self.map[i-1,j] == 0 and i+2 < n:
+                        belief_tmp[0,i,j] = 0.7884*(self.belief[0,i+1,j]+self.belief[0,i,j]) + \
                                             + 0.10558*(self.belief[0,i,j]) + \
-                                            0.10558*(0.333*self.belief[0,i,j]+0.333*self.belief[0,i+1,j]+0.333*self.belief[0,i+2,j])
-                    elif !self.map[i-1,j]:
-                        belief_tmp[0,i,j] = 0.882*(0.5*self.belief[1,i+1,j]+0.5*self.belief[1,i,j]) + \
+                                            0.10558*(self.belief[0,i,j]+self.belief[0,i+1,j]+self.belief[0,i+2,j])
+                    elif self.map[i-1,j] == 0:
+                        belief_tmp[0,i,j] = 0.882*(self.belief[1,i+1,j]+self.belief[1,i,j]) + \
                                             + 0.118*(self.belief[1,i,j])
                     if self.map[j,n-i] and i+2 < n:
                         belief_tmp[1,j,n-i-1] = 0.78884*self.belief[1,j,n-i-2] + 0.10558*self.belief[1,j,n-i-1] \
                                             + 0.10558*self.belief[1,j,n-i-3]
                     elif self.map[j,n-i]:
                         belief_tmp[1,j,n-i-1] = 0.882*self.belief[1,j,n-i-2] + 0.118*self.belief[1,j,n-i-1]
-                    elif !self.map[j,n-i] and i+2 < n:
-                        belief_tmp[1,j,n-i-1] = 0.7884*(0.5*self.belief[1,j,n-i-2]+0.5*self.belief[1,j,n-i-1]) + \
+                    elif self.map[j,n-i]==0 and i+2 < n:
+                        belief_tmp[1,j,n-i-1] = 0.7884*(self.belief[1,j,n-i-2]+self.belief[1,j,n-i-1]) + \
                                             + 0.10558*(self.belief[1,j,n-i-1]) + \
-                                            0.10558*(0.333*self.belief[1,j,n-i-2]+0.333*self.belief[1,j,n-i-1]+0.333*self.belief[1,j,n-i-3])
-                    elif !self.map[j,n-i]:
-                        belief_tmp[1,j,n-i-1] = 0.882*(0.5*self.belief[1,j,n-i-2]+0.5*self.belief[1,j,n-i-1]) + \
+                                            0.10558*(self.belief[1,j,n-i-2]+self.belief[1,j,n-i-1]+self.belief[1,j,n-i-3])
+                    elif self.map[j,n-i]==0:
+                        belief_tmp[1,j,n-i-1] = 0.882*(self.belief[1,j,n-i-2]+self.belief[1,j,n-i-1]) + \
                                             + 0.118*(self.belief[1,j,n-i-1])
                     if self.map[n-i,j] and i+2 < n:
                         belief_tmp[2,n-i-1,j] = 0.78884*self.belief[2,n-i-2,j] + 0.10558*self.belief[2,n-i-1,j] \
                                             + 0.10558*self.belief[2,n-i-3,j]
                     elif self.map[n-i,j]:
                         belief_tmp[2,n-i-1,j] = 0.882*self.belief[2,n-i-2,j] + 0.118*self.belief[2,n-i-1,j]
-                    elif !self.map[n-i,j] and i+2 < n:
-                        belief_tmp[2,n-i-1,j] = 0.7884*(0.5*self.belief[2,n-i-2,j]+0.5*self.belief[2,n-i-1,j]) + \
+                    elif self.map[n-i,j]==0 and i+2 < n:
+                        belief_tmp[2,n-i-1,j] = 0.7884*(self.belief[2,n-i-2,j]+self.belief[2,n-i-1,j]) + \
                                             + 0.10558*(self.belief[2,n-i-1,j]) + \
-                                            0.10558*(0.333*self.belief[2,n-i-2,j]+0.333*self.belief[2,n-i-1,j]+0.333*self.belief[2,n-i-3,j])
-                    elif !self.map[n-i,j]:
-                        belief_tmp[2,n-i-1,j] = 0.882*(0.5*self.belief[2,n-i-2,j]+0.5*self.belief[2,n-i-1,j]) + \
+                                            0.10558*(self.belief[2,n-i-2,j]+self.belief[2,n-i-1,j]+self.belief[2,n-i-3,j])
+                    elif self.map[n-i,j]==0:
+                        belief_tmp[2,n-i-1,j] = 0.882*(self.belief[2,n-i-2,j]+self.belief[2,n-i-1,j]) + \
                                             + 0.118*(self.belief[2,n-i-1,j])
                     if self.map[j,i-1] and i+2 < n:
                         belief_tmp[3,j,i] = 0.78884*self.belief[3,j,i+1] + 0.10558*self.belief[3,j,i] \
                                             + 0.10558*self.belief[3,j,i+2]
                     elif self.map[j,i-1]:
                         belief_tmp[3,j,i] = 0.882*self.belief[3,j,i+1] + 0.118*self.belief[3,j,i]
-                    elif !self.map[j,i-1] and i+2 < n:
-                        belief_tmp[3,j,i] = 0.7884*(0.5*self.belief[3,j,i+1]+0.5*self.belief[3,j,i]) + \
+                    elif self.map[j,i-1] == 0 and i+2 < n:
+                        belief_tmp[3,j,i] = 0.7884*(self.belief[3,j,i+1]+self.belief[3,j,i]) + \
                                             + 0.10558*(self.belief[3,j,i]) + \
-                                            0.10558*(0.333*self.belief[3,j,i]+0.333*self.belief[3,j,i+1]+0.333*self.belief[3,j,i+2])
-                    elif !self.map[j,i-1]:
-                        belief_tmp[3,j,i] = 0.882*(0.5*self.belief[3,j,i+1]+0.5*self.belief[3,j,i]) + \
+                                            0.10558*(self.belief[3,j,i]+self.belief[3,j,i+1]+self.belief[3,j,i+2])
+                    elif self.map[j,i-1] ==0:
+                        belief_tmp[3,j,i] = 0.882*(self.belief[3,j,i+1]+self.belief[3,j,i]) + \
                                             + 0.118*(self.belief[3,j,i])
             self.belief = belief_tmp
 
