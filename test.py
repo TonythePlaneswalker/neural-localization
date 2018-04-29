@@ -1,6 +1,8 @@
 import argparse
 import gym
 import Maze
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,13 +12,14 @@ import torch
 from a2c_v2 import A2C
 
 
-def plot_env(env, save_path):
+def plot_env(env, step, save_path):
     fig = plt.figure(figsize=(10, 8))
-    grid = gridspec.GridSpec(2, 1, left=0.02, right=0.98, bottom=0., top=0.98, hspace=0.1, height_ratios=[0.5, 0.3])
+    grid = gridspec.GridSpec(2, 1, left=0.02, right=0.98, bottom=0., top=0.95, hspace=0.1, height_ratios=[0.5, 0.3])
     map_img = env.get_map_with_agent().transpose([1, 2, 0])
     ax = plt.Subplot(fig, grid[0])
     ax.imshow(map_img)
     ax.set_axis_off()
+    ax.set_title('Step %d' % step)
     fig.add_subplot(ax)
 
     inner_grid = gridspec.GridSpecFromSubplotSpec(1, 4, subplot_spec=grid[1], wspace=0.05)
@@ -28,6 +31,7 @@ def plot_env(env, save_path):
         ax.set_title(orientations[j])
         fig.add_subplot(ax)
     fig.savefig(save_path)
+    plt.close(fig)
 
 
 if __name__ == '__main__':
@@ -55,6 +59,9 @@ if __name__ == '__main__':
         agent.model.load_state_dict(state_dict)
         stochastic = True if args.stochastic else False
 
+    if args.plot:
+        os.makedirs(args.plot_dir, exist_ok=True)
+
     num_success = 0
     start = time.time()
     for i in range(args.num_episodes):
@@ -68,7 +75,7 @@ if __name__ == '__main__':
             if args.render:
                 env.render()
             if args.plot:
-                plot_env(env, os.path.join(args.plot_dir, 'step%d' % step))
+                plot_env(env, step, os.path.join(args.plot_dir, 'step%d' % step))
             if passive:
                 action = env.action_space.sample()
             else:
@@ -78,7 +85,7 @@ if __name__ == '__main__':
             history[0] = action + 1
             step += 1
         if args.plot:
-            plot_env(env, os.path.join(args.plot_dir, 'step%d' % step))
+            plot_env(env, step, os.path.join(args.plot_dir, 'step%d' % step))
         num_success += reward
     end = time.time()
     print('Success ratio %.3f time %.2f' % (num_success / args.num_episodes, end - start))
