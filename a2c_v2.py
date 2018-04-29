@@ -130,7 +130,8 @@ class A2C:
             self.env.generate_map()
             rewards, _, _, _ = self.generate_episode(render=False, stochastic=stochastic)
             total_success += rewards[-1]
-        return total_success / num_episodes
+        #print(total_success, num_episodes, total_success/num_episodes)
+        return total_success*1.0 / num_episodes
 
     def select_action(self, belief, map, history, step, stochastic):
         # Select the action to take by sampling from the policy model

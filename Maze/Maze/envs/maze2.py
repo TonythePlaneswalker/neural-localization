@@ -195,8 +195,8 @@ class maze(gym.Env):
             num_possible = np.sum(self.belief > 0)
             max_value = np.max(self.belief)
             o, y, x = np.unravel_index(np.argmax(self.belief), self.belief.shape)
-            print("belief:", o,y,x)
-            print("real:",self.orientation,self.position[0],self.position[1])
+            # print("belief:", o,y,x)
+            # print("real:",self.orientation,self.position[0],self.position[1])
             if max_value > 0.5 and o == self.orientation and y == self.position[0] and x == self.position[1]:
                 reward = 1
             else:
