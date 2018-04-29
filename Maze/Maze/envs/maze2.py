@@ -90,8 +90,9 @@ class maze(gym.Env):
             self.orientation = (self.orientation + 1) % 4
             self.belief = np.roll(self.belief, 1, axis=0)
         elif action == 0:
-            new_pos = self.position.copy()
-            tmp_pos = self.position.copy()
+
+            new_pos = self.position[:]
+            tmp_pos = self.position[:]
             epsilon = np.random.choice(3,p=[0.10558,0.78884,0.10558]) - 1
             if self.orientation == 0:
                 new_pos[0] -= 1+epsilon
@@ -105,8 +106,9 @@ class maze(gym.Env):
             else:
                 new_pos[1] -= 1+epsilon
                 tmp_pos[1] -= 1
-            if self.map[new_pos[0], new_pos[1]] and (epsilon != 1 or self.map[tmp_pos[0],tmp_pos[1]]):
-                self.position = new_pos
+            if new_pos[0] >=0 and new_pos[0] < self.size and new_pos[1] >= 0 and new_pos[1] < self.size:
+                if self.map[new_pos[0], new_pos[1]] and (epsilon != 1 or self.map[tmp_pos[0],tmp_pos[1]]):
+                    self.position = new_pos
             elif epsilon == 1 and self.map[tmp_pos[0], tmp_pos[1]]:
                 self.position = tmp_pos
             n = self.size
@@ -132,8 +134,8 @@ class maze(gym.Env):
                                             + 0.10558*(self.belief[0,i,j]) + \
                                             0.10558*(self.belief[0,i,j]+self.belief[0,i+1,j]+self.belief[0,i+2,j])
                     elif self.map[i-1,j] == 0:
-                        belief_tmp[0,i,j] = 0.882*(self.belief[1,i+1,j]+self.belief[1,i,j]) + \
-                                            + 0.118*(self.belief[1,i,j])
+                        belief_tmp[0,i,j] = 0.882*(self.belief[0,i+1,j]+self.belief[0,i,j]) + \
+                                            + 0.118*(self.belief[0,i,j])
                     if self.map[j,n-i] and i+2 < n:
                         belief_tmp[1,j,n-i-1] = 0.78884*self.belief[1,j,n-i-2] + 0.10558*self.belief[1,j,n-i-1] \
                                             + 0.10558*self.belief[1,j,n-i-3]
@@ -172,7 +174,8 @@ class maze(gym.Env):
                                             + 0.118*(self.belief[3,j,i])
             self.belief = belief_tmp
 
-
+        #print(self.belief)
+        #_ = raw_input()
         obs = self.ray_cast[self.orientation, self.position[0], self.position[1]]
         # print(self.position, self.orientation, obs)
         epsilon = np.random.choice(3,p=[0.10558,0.78884,0.10558]) - 1
@@ -190,8 +193,11 @@ class maze(gym.Env):
         if self.current_step >= self.max_step:
             done = True
             num_possible = np.sum(self.belief > 0)
+            max_value = np.max(self.belief)
             o, y, x = np.unravel_index(np.argmax(self.belief), self.belief.shape)
-            if num_possible == 1 and o == self.orientation and y == self.position[0] and x == self.position[1]:
+            print("belief:", o,y,x)
+            print("real:",self.orientation,self.position[0],self.position[1])
+            if max_value > 0.5 and o == self.orientation and y == self.position[0] and x == self.position[1]:
                 reward = 1
             else:
                 reward = 0

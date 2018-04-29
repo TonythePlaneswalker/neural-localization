@@ -202,7 +202,7 @@ if __name__ == '__main__':
                         default=666, help="The random seed.")
     args = parser.parse_args()
     global vis
-    vis = Visdom(server='http://localhost',port='9000')
+    vis = Visdom(server='http://localhost',port='8097')
     env = gym.make('Maze-v0')
     env.seed(args.seed)
     torch.manual_seed(args.seed)

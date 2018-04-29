@@ -4,7 +4,7 @@ import Maze
 import getch
 from visdom import Visdom
 def main():
-    vis = Visdom(server='http://localhost',port='9000')
+    vis = Visdom(server='http://localhost',port='8097')
     env = gym.make('Maze-v0')
     while True:
         env.render(vis)
