@@ -41,8 +41,9 @@ class maze(gym.Env):
         self.ray_cast = np.transpose(ray_casting.ray_cast(self.map), [2, 0, 1])
 
     def reset(self):
-        self.orientation = self.np_random.randint(3)
         self.position = self.init_pos()
+        self.pos_cont = self.position + np.random.rand(2)
+        self.orientation = self.np_random.randint(3)
         init_obs = self.ray_cast[self.orientation, self.position[0], self.position[1]]
         self.belief = (self.ray_cast == init_obs).astype(np.float32)
         self.belief /= self.belief.sum()
@@ -54,7 +55,7 @@ class maze(gym.Env):
 
     def init_pos(self):
         free_row, free_col = np.where(self.map)
-        i = self.np_random.randint(len(free_row))
+        i = np.random.randint(len(free_row))
         return [free_row[i], free_col[i]]
 
     def step(self, action):
@@ -64,27 +65,22 @@ class maze(gym.Env):
         elif action == 2:
             self.orientation = (self.orientation + 1) % 4
             self.belief = np.roll(self.belief, 1, axis=0)
-        elif action == 0:
-            new_pos = self.position[:]
-            tmp_pos = self.position[:]
-            epsilon = np.random.choice(3,p=[0.10558,0.78884,0.10558]) - 1
+        else:
+            pos_cont = self.pos_cont.copy()
+            epsilon = np.random.normal(0, 0.4)
             if self.orientation == 0:
-                new_pos[0] -= 1+epsilon
-                tmp_pos[0] -= 1
+                pos_cont[0] -= 1+epsilon
             elif self.orientation == 1:
-                new_pos[1] += 1+epsilon
-                tmp_pos[1] += 1
+                pos_cont[1] += 1+epsilon
             elif self.orientation == 2:
-                new_pos[0] += 1+epsilon
-                tmp_pos[0] += 1
+                pos_cont[0] += 1+epsilon
             else:
-                new_pos[1] -= 1+epsilon
-                tmp_pos[1] -= 1
-            if new_pos[0] >=0 and new_pos[0] < self.size and new_pos[1] >= 0 and new_pos[1] < self.size:
-                if self.map[new_pos[0], new_pos[1]] and (epsilon != 1 or self.map[tmp_pos[0],tmp_pos[1]]):
-                    self.position = new_pos
-            elif epsilon == 1 and self.map[tmp_pos[0], tmp_pos[1]]:
-                self.position = tmp_pos
+                pos_cont[1] -= 1+epsilon
+            pos_cont = np.minimum(np.maximum(pos_cont, 0), self.size - 1)
+            new_pos = [int(pos_cont[0]), int(pos_cont[1])]
+            if self.map[new_pos[0], new_pos[1]]:
+                self.pos_cont = pos_cont
+                self.position = new_pos
 
             n = self.size
             belief_tmp = self.belief.copy()
@@ -140,30 +136,24 @@ class maze(gym.Env):
                                             + 0.118*(self.belief[3,j,i])
             self.belief = belief_tmp
 
-        #print(self.belief)
-        #_ = raw_input()
         obs = self.ray_cast[self.orientation, self.position[0], self.position[1]]
-        # print(self.position, self.orientation, obs)
-        epsilon = np.random.choice(3,p=[0.10558,0.78884,0.10558]) - 1
-        obs = obs + epsilon
+        obs = int(obs + np.random.normal(0, 0.4))
         if obs == -1:
             lik = (self.ray_cast == 0) * 0.882 + (self.ray_cast == 1) * 0.118
         else:
             lik = (self.ray_cast == (obs-1))*0.10558 + (self.ray_cast == (obs+1))*0.10558 + (self.ray_cast == obs)*0.7884
-        #lik = self.ray_cast == obs
+
         self.belief *= lik
+        if self.belief.sum() == 0:  # Lost track, reinitialize
+            self.belief = (self.ray_cast == obs).astype(np.float32)
         self.belief /= self.belief.sum()
         reward = self.belief.max()
 
         self.current_step += 1
         if self.current_step >= self.max_step:
             done = True
-            num_possible = np.sum(self.belief > 0)
-            max_value = np.max(self.belief)
             o, y, x = np.unravel_index(np.argmax(self.belief), self.belief.shape)
-            # print("belief:", o,y,x)
-            # print("real:",self.orientation,self.position[0],self.position[1])
-            if max_value > 0.5 and o == self.orientation and y == self.position[0] and x == self.position[1]:
+            if np.max(self.belief) > 0.5 and o == self.orientation and y == self.position[0] and x == self.position[1]:
                 reward = 1
             else:
                 reward = 0

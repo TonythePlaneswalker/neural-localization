@@ -36,10 +36,11 @@ def plot_env(env, step, save_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument('--model_path', help="Path of the saved model weights.")
+    parser.add_argument('--env_name', default='Maze-v1', help="Name of the environment.")
     parser.add_argument('--size', type=int, default=15, help="Size of the random maze.")
     parser.add_argument('--max_step', type=int, default=20, help="Maximum number of steps in an episode.")
     parser.add_argument('--num_episodes', type=int, default=1, help="Number of test episodes.")
-    parser.add_argument('--model_path', help="Path of the saved model weights.")
     parser.add_argument('-n', type=int, default=20, help="Number steps in the trace.")
     parser.add_argument('--stochastic', action='store_true', help="Use stochastic policy in testing.")
     parser.add_argument('--passive', action='store_true', help="Use a passive agent (random policy).")
@@ -48,7 +49,7 @@ if __name__ == '__main__':
     parser.add_argument('--plot_dir')
     args = parser.parse_args()
 
-    env = gym.make('Maze-v1')
+    env = gym.make(args.env_name)
     env.set_size(args.size)
     env.set_max_step(args.max_step)
 

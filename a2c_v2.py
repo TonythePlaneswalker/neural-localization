@@ -184,6 +184,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--task_name', dest='task_name',
                         default='A2C', help="Name of the experiment")
+    parser.add_argument('--env_name', dest='env_name',
+                        default='Maze-v1', help="Name of the environment.")
     parser.add_argument('--size', dest='size', type=int,
                         default=15, help="Size of the random maze.")
     parser.add_argument('--max_step', dest='max_step', type=int,
@@ -209,7 +211,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_cuda', action='store_true', help='Use GPU in training.')
     args = parser.parse_args()
 
-    env = gym.make('Maze-v1')
+    env = gym.make(args.env_name)
     env.set_size(args.size)
     env.set_max_step(args.max_step)
 
